@@ -1,0 +1,16 @@
+[project]
+name = "kltn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.18.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "libs/pg",
+    "libs/pg/src/pg/libs/base",
+    "libs/base",
+]
