@@ -11,6 +11,8 @@ dependencies = [
 [tool.uv.workspace]
 members = [
     "libs/pg",
-    "libs/pg/src/pg/libs/base",
     "libs/base",
+    "libs/lite_llm",
+    "libs/logger",
+    "services/aqi_agent",
 ]
