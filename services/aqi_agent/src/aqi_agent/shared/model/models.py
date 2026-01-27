@@ -23,7 +23,6 @@ class QueryIntent(BaseModel):
         description="Metric to query: 'aqi', 'pm25', or 'both'"
     )
 
-
 class DistrictAQIData(BaseModel):
     """AQI data for a single district."""
 

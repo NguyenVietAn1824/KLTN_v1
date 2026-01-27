@@ -29,8 +29,8 @@ Your role: Analyze user questions and create a TodoList with sub-questions that 
 **Planning Strategy:**
 
 **IMPORTANT - Hasura Relationships are CONFIGURED:**
-- ✅ distric_stats → district (object relationship via district_id)
-- ✅ districts → distric_stats (array relationship)
+- distric_stats → district (object relationship via district_id)
+- districts → distric_stats (array relationship)
 - Can use nested filters: `distric_stats(where: {district: {name: {_ilike: "%Ba Đình%"}}})`
 
 **OPTIMAL STRATEGY - For specific district AQI:**

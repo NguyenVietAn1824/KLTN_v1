@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from typing import TypedDict
 
-from .models import TodoList
+from .model.planning import TodoList
 
 
 class AQIAgentState(TypedDict, total=False):
@@ -16,6 +16,8 @@ class AQIAgentState(TypedDict, total=False):
     Attributes:
         raw_question (str): The original user question about air quality.
             Example: "What is the AQI in Hoan Kiem district today?"
+        context_schema (dict[str, str]): Table name to description mapping for planning.
+            Example: {'distric_stats': 'Contains AQI data...', 'districts': 'District metadata...'}
         shared_memory (TodoList | None): The planning structure containing tasks and
             sub-questions. Generated in planning phase, updated during execution.
         _task_number (int): Total number of tasks in the plan (1 or 2). Used to
@@ -33,6 +35,7 @@ class AQIAgentState(TypedDict, total=False):
     """
 
     raw_question: str
+    context_schema: dict[str, str]
     shared_memory: TodoList | None
     _task_number: int
     _task_idx: int

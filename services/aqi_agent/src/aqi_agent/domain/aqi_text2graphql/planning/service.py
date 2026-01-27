@@ -1,10 +1,3 @@
-"""
-Planning Service for KLTN AQI Text2GraphQL system.
-
-Decomposes user questions into structured tasks using LiteLLM.
-Adapted from sun_assistant Apollo planning service.
-"""
-
 from typing import Any, Dict
 
 from aqi_agent.shared.model import TodoList
@@ -22,7 +15,6 @@ class PlanningInput(BaseModel):
     
     raw_question: str
     context_schema: Dict[str, str]  # table_name -> description
-
 
 class PlanningOutput(BaseModel):
     """Output from planning service."""
@@ -168,3 +160,65 @@ class PlanningService(AsyncBaseService):
                 },
             )
             raise ValueError(f'Planning failed: {e}') from e
+    
+    async def gprocess(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Graph process method for LangGraph integration.
+        
+        Takes state dict with raw_question and context_schema,
+        returns updated state with shared_memory and task tracking.
+        
+        Args:
+            state: Graph state containing raw_question, context_schema
+            
+        Returns:
+            Updated state with shared_memory, _task_number, _task_idx
+        """
+        raw_question = state.get('raw_question', '')
+        context_schema = state.get('context_schema', {})
+        
+        logger.info(
+            'Planning gprocess started',
+            extra={'raw_question': raw_question}
+        )
+        
+        try:
+            result = await self.process(
+                PlanningInput(
+                    raw_question=raw_question,
+                    context_schema=context_schema,
+                )
+            )
+            
+            todo_list = result.todo_list
+            
+            # Calculate total tasks
+            task_count = 1  # first_task always exists
+            if todo_list.second_task and todo_list.second_task.sub_questions:
+                task_count = 2
+            
+            logger.info(
+                'Planning gprocess completed',
+                extra={
+                    'task_count': task_count,
+                    'first_task_sqs': len(todo_list.first_task.sub_questions),
+                }
+            )
+            
+            return {
+                'shared_memory': todo_list,
+                '_task_number': task_count,
+                '_task_idx': 1,  # Start from task 1
+            }
+            
+        except Exception as e:
+            logger.exception(
+                event='Planning gprocess failed',
+                extra={'raw_question': raw_question, 'error': str(e)}
+            )
+            return {
+                'exception': {
+                    'where': 'planning',
+                    'error': str(e),
+                }
+            }

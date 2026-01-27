@@ -220,6 +220,7 @@ version = "1.0.0"
 source = { editable = "services/aqi_agent" }
 dependencies = [
     { name = "base" },
+    { name = "easydict" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "langchain" },
@@ -230,6 +231,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pg" },
     { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "requests" },
     { name = "streamlit" },
     { name = "uvicorn", extra = ["standard"] },
@@ -247,6 +249,7 @@ dev = [
 requires-dist = [
     { name = "base", editable = "libs/base" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
+    { name = "easydict", specifier = ">=1.13" },
     { name = "fastapi", specifier = ">=0.100.0" },
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "langchain", specifier = ">=0.2.0" },
@@ -259,6 +262,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.0.280" },
     { name = "streamlit", specifier = ">=1.53.0" },
@@ -695,6 +699,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/8b/57666417c0f90f08bcafa776861060426765fdb422eb10212086fb811d26/dnspython-2.8.0.tar.gz", hash = "sha256:181d3c6996452cb1189c4046c61599b84a5a86e099562ffde77d26984ff26d0f", size = 368251, upload-time = "2025-09-07T18:58:00.022Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/5a/18ad964b0086c6e62e2e7500f7edc89e3faa45033c71c1893d34eed2b2de/dnspython-2.8.0-py3-none-any.whl", hash = "sha256:01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af", size = 331094, upload-time = "2025-09-07T18:57:58.071Z" },
+]
+
+[[package]]
+name = "easydict"
+version = "1.13"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/9f/d18d6b5e19244788a6d09c14a8406376b4f4bfcc008e6d17a4f4c15362e8/easydict-1.13.tar.gz", hash = "sha256:b1135dedbc41c8010e2bc1f77ec9744c7faa42bce1a1c87416791449d6c87780", size = 6809, upload-time = "2024-03-04T12:04:41.251Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/ec/fa6963f1198172c2b75c9ab6ecefb3045991f92f75f5eb41b6621b198123/easydict-1.13-py3-none-any.whl", hash = "sha256:6b787daf4dcaf6377b4ad9403a5cee5a86adbc0ca9a5bcf5410e9902002aeac2", size = 6804, upload-time = "2024-03-04T12:04:39.508Z" },
 ]
 
 [[package]]
@@ -1380,10 +1393,22 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "base" },
+    { name = "easydict" },
+    { name = "langchain" },
+    { name = "lite-llm" },
+    { name = "logger" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "alembic", specifier = ">=1.18.0" }]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.18.0" },
+    { name = "base", editable = "libs/base" },
+    { name = "easydict", specifier = ">=1.13" },
+    { name = "langchain", specifier = ">=1.2.4" },
+    { name = "lite-llm", editable = "libs/lite_llm" },
+    { name = "logger", editable = "libs/logger" },
+]
 
 [[package]]
 name = "langchain"

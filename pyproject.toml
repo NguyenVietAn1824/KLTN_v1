@@ -6,6 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.0",
+    "base",
+    "easydict>=1.13",
+    "langchain>=1.2.4",
+    "lite-llm",
+    "logger",
 ]
 
 [tool.uv.workspace]
@@ -16,3 +21,8 @@ members = [
     "libs/logger",
     "services/aqi_agent",
 ]
+
+[tool.uv.sources]
+lite-llm = { workspace = true }
+logger = { workspace = true }
+base = { workspace = true }

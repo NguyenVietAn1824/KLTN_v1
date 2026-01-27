@@ -239,3 +239,131 @@ class SubAgentService(AsyncBaseService):
                 query='',
                 error=f'Workflow failed: {str(e)}'
             )
+    
+    async def gprocess(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Graph process method for LangGraph integration.
+        
+        Executes a single sub-question from the current task in shared_memory.
+        Updates the sub-question's data and query fields directly.
+        
+        Args:
+            state: Graph state containing shared_memory, _task_idx
+            
+        Returns:
+            Updated state with modified shared_memory
+        """
+        shared_memory = state.get('shared_memory')
+        task_idx = state.get('_task_idx', 1)
+        
+        if not shared_memory:
+            logger.error('No shared_memory in state')
+            return {
+                'exception': {
+                    'where': 'sub_agent',
+                    'error': 'No shared_memory found',
+                }
+            }
+        
+        # Get current task
+        if task_idx == 1:
+            current_task = shared_memory.first_task
+        elif task_idx == 2 and shared_memory.second_task:
+            current_task = shared_memory.second_task
+        else:
+            logger.warning(
+                'Invalid task_idx or no second_task',
+                extra={'task_idx': task_idx}
+            )
+            return {}
+        
+        # Process all sub-questions in parallel
+        import asyncio
+        
+        async def process_sub_question(sq_idx: int):
+            """Process a single sub-question."""
+            sub_q = current_task.sub_questions[sq_idx]
+            
+            logger.info(
+                'Processing sub-question',
+                extra={
+                    'task_idx': task_idx,
+                    'sq_idx': sq_idx,
+                    'question': sub_q.question,
+                    'table': sub_q.table_name,
+                }
+            )
+            
+            try:
+                result = await self.process(
+                    SubAgentInput(
+                        question=sub_q.question,
+                        description=sub_q.description,
+                        table_name=sub_q.table_name,
+                    )
+                )
+                
+                # Update sub-question in-place
+                sub_q.data = result.data
+                sub_q.query = result.query
+                
+                if result.error:
+                    logger.warning(
+                        'Sub-question failed',
+                        extra={
+                            'sq_idx': sq_idx,
+                            'error': result.error,
+                        }
+                    )
+                
+                return True
+                
+            except Exception as e:
+                logger.exception(
+                    event='Sub-question processing error',
+                    extra={
+                        'sq_idx': sq_idx,
+                        'question': sub_q.question,
+                        'error': str(e),
+                    }
+                )
+                sub_q.data = {}
+                sub_q.query = ''
+                return False
+        
+        # Execute all sub-questions in parallel
+        try:
+            num_sqs = len(current_task.sub_questions)
+            logger.info(
+                'Starting parallel sub-question processing',
+                extra={
+                    'task_idx': task_idx,
+                    'num_sub_questions': num_sqs,
+                }
+            )
+            
+            await asyncio.gather(
+                *[process_sub_question(i) for i in range(num_sqs)]
+            )
+            
+            logger.info(
+                'Completed parallel sub-question processing',
+                extra={'task_idx': task_idx}
+            )
+            
+            return {
+                'shared_memory': shared_memory,
+                '_task_idx': task_idx + 1,  # Increment for next iteration
+            }
+            
+        except Exception as e:
+            logger.exception(
+                event='Parallel processing failed',
+                extra={'task_idx': task_idx, 'error': str(e)}
+            )
+            return {
+                'exception': {
+                    'where': 'sub_agent',
+                    'error': str(e),
+                }
+            }
