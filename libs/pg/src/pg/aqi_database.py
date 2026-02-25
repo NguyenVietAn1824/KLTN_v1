@@ -13,11 +13,11 @@ from functools import cached_property
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from ..model import Base
-from .province_controller import ProvinceController
-from .district_new_controller import DistrictController
-from .distric_stats_new_controller import DistricStatsController
-from .air_component_controller import AirComponentController
+from .model import Base
+from .controller.province_controller import ProvinceController
+from .controller.district_controller import DistrictController
+from .controller.distric_stats_controller import DistricStatsController
+from .controller.air_component_controller import AirComponentController
 
 
 class AQIDatabase(

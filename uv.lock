@@ -14,6 +14,7 @@ members = [
     "kltn",
     "lite-llm",
     "logger",
+    "opensearch",
     "pg",
 ]
 
@@ -724,6 +725,14 @@ wheels = [
 ]
 
 [[package]]
+name = "events"
+version = "0.5"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/ed/e47dec0626edd468c84c04d97769e7ab4ea6457b7f54dcb3f72b17fcd876/Events-0.5-py3-none-any.whl", hash = "sha256:a7286af378ba3e46640ac9825156c93bdba7502174dd696090fdfcd4d80a1abd", size = 6758, upload-time = "2023-07-31T08:23:13.645Z" },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.128.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1398,6 +1407,8 @@ dependencies = [
     { name = "langchain" },
     { name = "lite-llm" },
     { name = "logger" },
+    { name = "opensearch" },
+    { name = "pg" },
 ]
 
 [package.metadata]
@@ -1408,6 +1419,8 @@ requires-dist = [
     { name = "langchain", specifier = ">=1.2.4" },
     { name = "lite-llm", editable = "libs/lite_llm" },
     { name = "logger", editable = "libs/logger" },
+    { name = "opensearch", editable = "libs/opensearch" },
+    { name = "pg", editable = "libs/pg" },
 ]
 
 [[package]]
@@ -2012,6 +2025,46 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/94/f4/4690ecb5d70023ce6bfcfeabfe717020f654bde59a775058ec6ac4692463/openai-2.15.0.tar.gz", hash = "sha256:42eb8cbb407d84770633f31bf727d4ffb4138711c670565a41663d9439174fba", size = 627383, upload-time = "2026-01-09T22:10:08.603Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b5/df/c306f7375d42bafb379934c2df4c2fa3964656c8c782bac75ee10c102818/openai-2.15.0-py3-none-any.whl", hash = "sha256:6ae23b932cd7230f7244e52954daa6602716d6b9bf235401a107af731baea6c3", size = 1067879, upload-time = "2026-01-09T22:10:06.446Z" },
+]
+
+[[package]]
+name = "opensearch"
+version = "0.1.0"
+source = { editable = "libs/opensearch" }
+dependencies = [
+    { name = "opensearch-py" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "opensearch-py", specifier = ">=3.1.0" }]
+
+[[package]]
+name = "opensearch-protobufs"
+version = "0.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "grpcio" },
+    { name = "protobuf" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/e2/8a09dbdbfe51e30dfecb625a0f5c524a53bfa4b1fba168f73ac85621dba2/opensearch_protobufs-0.19.0-py3-none-any.whl", hash = "sha256:5137c9c2323cc7debb694754b820ca4cfb5fc8eb180c41ff125698c3ee11bfc2", size = 39778, upload-time = "2025-09-29T20:05:52.379Z" },
+]
+
+[[package]]
+name = "opensearch-py"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "events" },
+    { name = "opensearch-protobufs" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/65/9f/d4969f7e8fa221bfebf254cc3056e7c743ce36ac9874e06110474f7c947d/opensearch_py-3.1.0.tar.gz", hash = "sha256:883573af13175ff102b61c80b77934a9e937bdcc40cda2b92051ad53336bc055", size = 258616, upload-time = "2025-11-20T16:37:36.777Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/08/a1/293c8ad81768ad625283d960685bde07c6302abf20a685e693b48ab6eb91/opensearch_py-3.1.0-py3-none-any.whl", hash = "sha256:e5af83d0454323e6ea9ddee8c0dcc185c0181054592d23cb701da46271a3b65b", size = 385729, upload-time = "2025-11-20T16:37:34.941Z" },
 ]
 
 [[package]]

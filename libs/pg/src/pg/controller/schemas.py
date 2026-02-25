@@ -16,7 +16,7 @@ from datetime import datetime
 from datetime import date as date_type
 from typing import Optional
 
-from base import CustomBaseModel as BaseModel
+from base import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 

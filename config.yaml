@@ -1,0 +1,66 @@
+model_list:
+  - model_name: gemini-embedding 
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      api_key: os.environ/GEMINI_API_KEY1
+      rpm: 10
+
+  - model_name: gemini-embedding 
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      api_key: os.environ/GEMINI_API_KEY7
+      rpm: 10
+
+  - model_name: gemini-embedding 
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      api_key: os.environ/GEMINI_API_KEY8
+      rpm: 10
+
+  - model_name: gemini-embedding 
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      api_key: os.environ/GEMINI_API_KEY9
+      rpm: 10
+
+  - model_name: gemini-embedding 
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      api_key: os.environ/GEMINI_API_KEY10
+      rpm: 10
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY1
+      rpm: 10
+  
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY2
+      rpm: 10
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY3
+      rpm: 10
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY4
+      rpm: 10
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY5
+      rpm: 10
+
+general_settings:
+  master_key: os.environ/LITELLM__TOKEN
+
+litellm_settings:
+  drop_params: true

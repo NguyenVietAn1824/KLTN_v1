@@ -11,6 +11,8 @@ dependencies = [
     "langchain>=1.2.4",
     "lite-llm",
     "logger",
+    "opensearch",
+    "pg",
 ]
 
 [tool.uv.workspace]
@@ -20,9 +22,12 @@ members = [
     "libs/lite_llm",
     "libs/logger",
     "services/aqi_agent",
+    "libs/opensearch",
 ]
 
 [tool.uv.sources]
 lite-llm = { workspace = true }
 logger = { workspace = true }
 base = { workspace = true }
+opensearch = { workspace = true }
+pg = { workspace = true }

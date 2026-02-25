@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from .database import SessionLocal
-from .database import engine
-from .database import get_db
-from .database.aqi_database import AQIDatabase
-from .database.district_controller import DistrictController
-from .database.distric_stats_controller import DistricStatsController
+from .aqi_database import AQIDatabase
+from .controller.district_controller import DistrictController
+from .controller.distric_stats_controller import DistricStatsController
 from .model import AirComponent
 from .model import Base
 from .model import District
@@ -19,9 +16,6 @@ __all__ = [
     'District',
     'AirComponent',
     'DistricStats',
-    'engine',
-    'SessionLocal',
-    'get_db',
     'PostgresSettings',
     'AQIDatabase',
     'DistrictController',

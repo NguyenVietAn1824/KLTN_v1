@@ -79,6 +79,19 @@ services:
     networks:
       - app-tier
 
+  litellm_service:
+    image: ghcr.io/berriai/litellm:main-latest
+    ports:
+      - "9510:4000"
+    networks:
+      - app-tier
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    command:
+      - "--config=/app/config.yaml"
+    environment:
+      - GEMINI_API_KEY1=${GEMINI_API_KEY1}
+
   hasura:
     image: hasura/graphql-engine:v2.36.0
     ports:
