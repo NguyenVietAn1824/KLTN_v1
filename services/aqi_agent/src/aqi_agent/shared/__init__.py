@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .model.planning import SubQuestion, Task, TodoList
+from .models.planning import SubQuestion, Task, TodoList
 from .state import AQIAgentState, SubAgentState
 
 __all__ = [
