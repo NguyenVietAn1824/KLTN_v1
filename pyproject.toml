@@ -35,3 +35,21 @@ pg = { workspace = true }
 aqi-agent = { workspace = true }
 lite-llm = { workspace = true }
 logger = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]
+pythonpath = [
+    "services/aqi_agent/src",
+    "libs/base/src",
+    "libs/lite_llm/src",
+    "libs/logger/src",
+    "libs/pg/src",
+    "libs/opensearch/src",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]

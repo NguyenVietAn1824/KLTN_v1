@@ -1,0 +1,96 @@
+rephrase_question:
+  model: "gemini-2.5-flash"
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  max_completion_tokens: 1024
+
+planner:
+  model: "gemini-2.5-flash"
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  max_completion_tokens: 4096
+
+match_sql_generator:
+  model: "gemini-2.5-flash"
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  max_completion_tokens: 2048
+
+mismatch_sql_generator:
+  model: "gemini-2.5-flash"
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  max_completion_tokens: 2048
+
+human_intervent:
+  model: "gemini-2.5-flash"
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  max_completion_tokens: 1024
+
+opensearch:
+  knn_size: 5
+  embedding_model: azure_embedding
+  encoding_format: float
+  dimensions: 1536
+
+table_pruner:
+  index_name: chatwithdb-tables
+  search_pipeline: table-retrieval-pipeline
+  knn_size: 5
+  model: "gpt-4.1"
+  max_completion_tokens: 2048
+
+history_retrieval:
+  n_turns: 2
+
+litellm:
+  model: 'gemini-2.5-flash'
+  max_token_context: 100000
+  max_completion_tokens: 4096
+  retry_count: 3
+  embedding_model: 'gemini-embedding'
+  encoding_format: 'float'
+  frequency_penalty: 0
+  n: 1
+  presence_penalty: 0
+  temperature: 0
+  top_p: 1
+  dimensions: 1536
+  max_length: 8000
+  timeout: 60
+  connect_timeout: 10
+  max_connections: 200
+  max_keepalive_connections: 40
+  context_window: 100000
+  condition_model: 'gemini-2.5-flash'
+
+example_management:
+  index_name: "examples"
+  knn_size: 10
+  dimensions: 1536
+  embedding_model: "gemini-embedding"
+  encoding_format: "float"
+  threshold: 0.8
+
+deployment_env: dev
+
+redis:
+  db: 0
+  password: null
+  ssl: false
