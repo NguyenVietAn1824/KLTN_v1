@@ -1,45 +1,59 @@
 from __future__ import annotations
 
-COLUMN_SELECTION_SYSTEM_PROMPT = """### TASK ###
-You are an expert SQL analyst. Given a database schema in DDL format and a natural language question, identify the specific tables and columns needed to write a SQL query that answers the question.
+COLUMN_SELECTION_SYSTEM_PROMPT = """
+<role>
+You are an expert SQL analyst. Given a database schema in DDL format and a natural language question, identify the tables and columns needed to write a complete and accurate SQL query that answers the question.
+</role>
 
-### INSTRUCTIONS ###
-1. Analyze the question to understand what data is being requested
-2. Identify which tables from the schema are required to answer the question
-3. For each required table, select ONLY the columns that are necessary:
-   - Columns needed in SELECT clause (what to retrieve/display)
-   - Columns needed in WHERE clause (filtering conditions)
-   - Columns needed in JOIN conditions (linking tables)
-   - Columns needed in GROUP BY/ORDER BY/HAVING clauses
-4. Do NOT include columns that are not directly relevant to answering the question
-5. Always include primary key (id) columns when they are needed for JOINs
-6. Consider foreign key relationships between tables
+<instruction>
+1. Analyze the question to understand what data is being requested, including implicit needs.
+2. Identify which tables from the schema are required to answer the question.
+3. For each required table, select all columns that could reasonably be needed:
+   - Columns needed in SELECT clause (what to retrieve or display)
+   - Columns needed in WHERE clause (filtering conditions, including implied filters)
+   - Columns needed in JOIN conditions (primary keys, foreign keys, linking columns)
+   - Columns needed in GROUP BY / ORDER BY / HAVING clauses
+   - Human-readable label or name columns (e.g., `name`, `title`, `description`) even when the question asks for IDs or counts, as they improve result readability
+   - Status, type, or category columns that may be relevant for filtering or context
+   - Date/time columns that could be used for ordering or range filtering
+   - Computed or derived source columns (e.g., include `price` and `quantity` when revenue is implied)
+4. Always include primary key and foreign key columns for tables involved in JOINs.
+5. When in doubt about whether a column is needed, include it — missing a relevant column is worse than including an extra one.
+</instruction>
 
-### RULES ###
-- Be conservative: only select columns that are absolutely necessary
-- If a column is mentioned in the question or implied by the question, include it
-- Include aggregate source columns (e.g., include 'quantity' if counting/summing quantities)
-- Include columns needed for filtering even if not displayed in results
+<constraint>
+- Be inclusive rather than restrictive: prefer to over-select columns rather than under-select.
+- Do not drop columns just because they are not explicitly mentioned — infer what is contextually useful.
+- Always include enough columns so that the resulting SQL query can be written without needing additional schema lookups.
+- Never omit primary keys or foreign keys for any selected table.
+</constraint>
 
-### OUTPUT FORMAT ###
+<output_format>
 Return JSON in this exact format:
 {{
     "results": [
         {{
             "table_name": "table1",
-            "table_selection_reason": "Brief explanation of why this table is needed",
-            "columns": ["col1", "col2"],
-            "column_reasoning": ["Why col1 is needed", "Why col2 is needed"]
+            "columns": ["col1", "col2"]
         }}
     ]
 }}
+</output_format>
 """
 
-COLUMN_SELECTION_USER_PROMPT = """### DATABASE SCHEMA (DDL FORMAT) ###
+COLUMN_SELECTION_USER_PROMPT = """
+<database_schema>
 {schema}
+</database_schema>
 
-### USER QUESTION ###
+<current_date>
+{current_date}
+</current_date>
+
+<user_question>
 {question}
+</user_question>
 
-Analyze the schema and question above. Select only the tables and columns necessary to answer this question.
+Analyze the schema and question above. Select all tables and columns that are necessary or likely useful to answer this question completely and accurately.
+Note: The current date is provided above to help you select date/time related columns when the question involves temporal context (e.g., "today", "this week", "latest").
 """

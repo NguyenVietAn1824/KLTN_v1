@@ -117,9 +117,11 @@ class SQLExecutionState(TypedDict):
     Attributes:
         execution_result: The result of the SQL execution if successful.
         error_message: Error message if the SQL execution failed.
+        number_of_rows: Number of rows returned by the SQL execution, if applicable.
     """
     execution_result: str | None
     error_message: str | None
+    number_of_rows: int | None
 
 
 class FixSQLAgentState(TypedDict):

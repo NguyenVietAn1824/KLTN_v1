@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from base import BaseModel
@@ -147,6 +148,7 @@ class ColumnPrunerService(BaseService):
             if column_definitions:
                 ddl = f'CREATE TABLE {table_name} (\n'
                 ddl += ',\n'.join(column_definitions)
+                ddl += ',\n    createdAt DATETIME'
                 ddl += '\n);'
                 ddl_statements.append(ddl)
 
@@ -198,6 +200,7 @@ class ColumnPrunerService(BaseService):
                             content=COLUMN_SELECTION_USER_PROMPT.format(
                                 schema=schema,
                                 question=inputs.question,
+                                current_date=datetime.now().strftime('%Y-%m-%d %H:%M'),
                             ),
                         ),
                     ],

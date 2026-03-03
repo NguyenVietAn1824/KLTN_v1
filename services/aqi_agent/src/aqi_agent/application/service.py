@@ -1,391 +1,460 @@
-"""
-AQI Agent Application Service - Updated for Apollo architecture.
+from __future__ import annotations
 
-Main orchestrator following Apollo's task-based pattern with LangGraph.
-Uses StateGraph to manage planning → sub_agent execution flow.
-"""
+from typing import Any
+from typing import List
+from typing import Literal
 
-from typing import Any, Dict, List
-from functools import cached_property
+from base import BaseModel
+from base import BaseService
+from aqi_agent.domain.answer_generator import AnswerGeneratorService
+from aqi_agent.domain.autocorrector import AutocorrectorService
+from aqi_agent.domain.fixsql_agent import FixSQLService
+from aqi_agent.domain.example_management import ExampleManagementService
+from aqi_agent.domain.history_retrieval import HistoryRetrievalService
+from aqi_agent.domain.human_intervent import HumanInterventService
+from aqi_agent.domain.interrupt_checker import InterruptCheckerService
+from aqi_agent.domain.memory_updater import MemoryUpdaterService
+from aqi_agent.domain.planner import PlannerService
+from aqi_agent.domain.rephrase_question import RephraseService
+from aqi_agent.domain.sql_execution_handler import SQLExecutionHandlerService
+from aqi_agent.domain.sql_generator import MatchSQLGeneratorService
+from aqi_agent.domain.sql_generator import MismatchSQLGeneratorService
+from aqi_agent.domain.sql_validator import SQLValidatorService
+from aqi_agent.domain.table_pruner import TablePrunerService
+from aqi_agent.shared.models.state import AnswerGeneratorState
+from aqi_agent.shared.models.state import ChatwithDBState
+from aqi_agent.shared.models.state import FixSQLAgentState
+from aqi_agent.shared.models.state import ExampleRetrievalState
+from aqi_agent.shared.models.state import HistoryRetrievalState
+from aqi_agent.shared.models.state import HumanInterventState
+from aqi_agent.shared.models.state import PlannerServiceState
+from aqi_agent.shared.models.state import RephraseServiceState
+from aqi_agent.shared.models.state import SQLExecutionState
+from aqi_agent.shared.models.state import SQLGeneratorState
+from aqi_agent.shared.models.state import SQLValidatorState
+from aqi_agent.shared.models.state import TablePrunerState
 from easydict import EasyDict
-from langchain_core.runnables import RunnableLambda
-from langgraph.graph import END, START, StateGraph
-
-from aqi_agent.domain.aqi_text2graphql.planning import PlanningService
-from aqi_agent.domain.aqi_text2graphql.sub_agent import SubAgentService
-from aqi_agent.domain.nlg import NLGInput, NLGService
-from aqi_agent.shared.state import AQIAgentState
-from base import BaseModel, BaseService
+from fastapi import BackgroundTasks
+from fastapi import Request
+from fastapi.encoders import jsonable_encoder
+from langgraph.graph import END
+from langgraph.graph import START
+from langgraph.graph import StateGraph
+from langgraph.types import interrupt
 from logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class AQIAgentInput(BaseModel):
-    """Input for AQI Agent service."""
-    
-    question: str  # User's natural language question
+    question: str
+    conversation_id: str
+    user_id: str
 
 
 class AQIAgentOutput(BaseModel):
-    """Output from AQI Agent service."""
-    
-    answer: str  # Natural language answer
-    data: Dict[str, Any]  # Raw query results
-    graphql_queries: List[str]  # Executed GraphQL queries
-    error: str | None = None
+    response: str
 
 
-class AQIAgentService(BaseService):
-    """
-    Main AQI Agent service following Apollo architecture with LangGraph.
-    
-    Workflow (StateGraph):
-    1. planning: Generate TodoList with first_task and optional second_task
-    2. sub_agent: Execute current task's sub-questions in parallel
-    3. Loop back to sub_agent if second_task exists
-    4. NLG: Generate natural language answer from results
-    
-    State Management:
-    - shared_memory: TodoList containing all tasks and their results
-    - _task_idx: Current task being processed (1 or 2)
-    - _task_number: Total number of tasks (1 or 2)
-    """
-    
-    planning_service: PlanningService
-    sub_agent_service: SubAgentService
-    nlg_service: NLGService
-    
+class AQIAgentApplication(BaseService):
+
+    request: Request
+
+    @property
+    def interrupt_checker_service(self) -> InterruptCheckerService:
+        return InterruptCheckerService(
+            sql_database=self.request.app.state.sql_database,
+        )
+
+    @property
+    def rephrase_service(self) -> RephraseService:
+        return RephraseService(
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.rephrase_question,
+        )
+
+    @property
+    def history_retrieval_service(self) -> HistoryRetrievalService:
+        return HistoryRetrievalService(
+            sql_database=self.request.app.state.sql_database,
+            settings=self.request.app.state.settings.history_retrieval,
+        )
+
+    @property
+    def table_pruner_service(self) -> TablePrunerService:
+        return TablePrunerService(
+            opensearch_service=self.request.app.state.opensearch_service,
+            litellm_service=self.request.app.state.litellm_service,
+            table_pruner_settings=self.request.app.state.settings.table_pruner,
+        )
+
+    @property
+    def example_management_service(self) -> ExampleManagementService:
+        return ExampleManagementService(
+            opensearch_service=self.request.app.state.opensearch_service,
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.example_management,
+        )
+
+    @property
+    def planner_service(self) -> PlannerService:
+        return PlannerService(
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.planner,
+        )
+
+    @property
+    def human_intervent_service(self) -> HumanInterventService:
+        return HumanInterventService(
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.human_intervent,
+        )
+
+    @property
+    def autocorrector_service(self) -> AutocorrectorService:
+        return AutocorrectorService(
+            redis_client=self.request.app.state.redis_client,
+            settings=self.request.app.state.settings.autocorrector,
+        )
+
+    @property
+    def match_sql_generator_service(self) -> MatchSQLGeneratorService:
+        return MatchSQLGeneratorService(
+            litellm_service=self.request.app.state.litellm_service,
+            autocorrector_service=self.autocorrector_service,
+            settings=self.request.app.state.settings.match_sql_generator,
+        )
+
+    @property
+    def mismatch_sql_generator_service(self) -> MismatchSQLGeneratorService:
+        return MismatchSQLGeneratorService(
+            litellm_service=self.request.app.state.litellm_service,
+            autocorrector_service=self.autocorrector_service,
+            settings=self.request.app.state.settings.mismatch_sql_generator,
+        )
+
+    @property
+    def answer_generator_service(self) -> AnswerGeneratorService:
+        return AnswerGeneratorService(
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.answer_generator,
+        )
+
+    @property
+    def sql_validator_service(self) -> SQLValidatorService:
+        return SQLValidatorService()
+
+    @property
+    def sql_execution_handler_service(self) -> SQLExecutionHandlerService:
+        return SQLExecutionHandlerService(
+            sql_database=self.request.app.state.sql_database,
+            settings=self.request.app.state.settings.sql_execution,
+        )
+
+    @property
+    def fixsql_agent_service(self) -> FixSQLService:
+        return FixSQLService(
+            litellm_service=self.request.app.state.litellm_service,
+            settings=self.request.app.state.settings.fixsql_agent,
+        )
+
+    @property
+    def memory_updater_service(self) -> MemoryUpdaterService:
+        return MemoryUpdaterService(
+            sql_database=self.request.app.state.sql_database,
+            settings=self.request.app.state.settings.memory_updater,
+            litellm_service=self.request.app.state.litellm_service,
+        )
+
+    def join_nodes(self, state: ChatwithDBState) -> ChatwithDBState:
+        """
+        Join the outputs of parallel nodes (table_pruner, retrieve_example)
+        back into the main state.
+        """
+        return state
+
     @property
     def nodes(self) -> EasyDict:
-        """Graph node mapping."""
         return EasyDict(
             {
-                'planning': self.planning_service.gprocess,
-                'sub_agent': self.sub_agent_service.gprocess,
+                'interrupt_checker': self.interrupt_checker_service.gprocess,
+                'rephrase_question': self.rephrase_service.gprocess,
+                'retrieve_history': self.history_retrieval_service.gprocess,
+                'retrieve_example': self.example_management_service.gprocess,
+                'table_pruner': self.table_pruner_service.gprocess,
+                'planner': self.planner_service.gprocess,
+                'match_sql_generator': self.match_sql_generator_service.gprocess,
+                'answer_generator': self.answer_generator_service.gprocess,
+                'join_nodes': self.join_nodes,
+                'human_intervent': self.human_intervent_service.gprocess,
+                'mismatch_sql_generator': self.mismatch_sql_generator_service.gprocess,
+                'sql_validator': self.sql_validator_service.gprocess,
+                'fixsql_agent': self.fixsql_agent_service.gprocess,
+                'sql_execution_handler': self.sql_execution_handler_service.gprocess,
             },
         )
-    
-    @cached_property
-    def base_graph(self):
+
+    async def check_interrupt_node(self, state: ChatwithDBState) -> ChatwithDBState:
         """
-        Compile and cache the LangGraph workflow.
-        
-        Graph Architecture:
-            START → planning → sub_agent ──┬─(more tasks)─▶ sub_agent
-                                           └─(done)─▶ END
-        
-        Node Functions:
-            - planning: Generates TodoList and sets up task tracking
-            - sub_agent: Processes all sub-questions in current task (parallel)
-        
-        Loop Control:
-            The sub_agent node increments _task_idx. The conditional edge
-            checks if _task_idx <= _task_number to determine looping.
+        Interrupt the graph when need_context is False,
+        allowing human-in-the-loop confirmation before proceeding.
         """
-        graph = StateGraph(AQIAgentState)
-        
-        # Add nodes
-        for key, tool in self.nodes.items():
-            graph.add_node(key, tool)
-        
-        # Add edges
-        graph.add_edge(START, 'planning')
-        graph.add_edge('planning', 'sub_agent')
-        
-        # Conditional looping for sub_agent
-        def _loop_or_end(state: AQIAgentState) -> str:
-            """Continue loop if more tasks, else end."""
-            task_idx = state.get('_task_idx', 1)
-            task_number = state.get('_task_number', 1)
-            
-            # Check if there are more tasks to process
-            # _task_idx is already incremented by sub_agent
-            if task_idx <= task_number:
-                logger.info(
-                    'Looping to next task',
-                    extra={'task_idx': task_idx, 'task_number': task_number}
-                )
-                return 'more'
-            else:
-                logger.info(
-                    'All tasks completed',
-                    extra={'task_idx': task_idx, 'task_number': task_number}
-                )
-                return 'end'
-        
+        logger.info('Checking for interrupt', extra={'rephrased_state': state['interrupt']})
+        interrupt(state)
+        return {**state, 'interrupt': True}
+
+    def _build_graph(self) -> Any:
+        """
+        Compile the state graph for the AQI Agent service.
+
+        This graph defines the flow of states and transitions for air quality
+        data querying using a text-to-SQL pipeline.
+
+        Returns:
+            Compiled state graph ready for invocation.
+        """
+        graph = StateGraph(
+            ChatwithDBState,
+        )
+        for node, action in self.nodes.items():
+            graph.add_node(node, action)
+
+        def rephrase_question_route(
+            state: ChatwithDBState,
+        ) -> List[Literal['table_pruner', 'retrieve_example', 'human_intervent']]:
+            if state.get('rephrased_state', {}).get('need_context', False):
+                return ['table_pruner', 'retrieve_example']
+            return ['human_intervent']
+
+        def interrupt_router(
+            state: ChatwithDBState,
+        ) -> Literal['retrieve_history', 'end']:
+            if not state.get('interrupt', False):
+                return 'retrieve_history'
+            return 'end'
+
+        # START -> interrupt_checker
+        graph.add_edge(START, 'interrupt_checker')
+
+        # interrupt_checker -> retrieve_history | END
         graph.add_conditional_edges(
-            'sub_agent',
-            _loop_or_end,
+            'interrupt_checker',
+            interrupt_router,
             {
-                'more': 'sub_agent',
+                'retrieve_history': 'retrieve_history',
                 'end': END,
             },
         )
-        
+
+        # retrieve_history -> rephrase_question
+        graph.add_edge('retrieve_history', 'rephrase_question')
+
+        # rephrase_question -> [table_pruner || retrieve_example] | human_intervent
+        graph.add_conditional_edges(
+            'rephrase_question',
+            rephrase_question_route,
+            {
+                'table_pruner': 'table_pruner',
+                'retrieve_example': 'retrieve_example',
+                'human_intervent': 'human_intervent',
+            },
+        )
+
+        # parallel nodes -> join_nodes
+        graph.add_edge('retrieve_example', 'join_nodes')
+        graph.add_edge('table_pruner', 'join_nodes')
+
+        def generate_mode_route(state: ChatwithDBState) -> str:
+            if state.get('example_retrieval_state', {}).get('examples', []):
+                logger.info(
+                    'Found %d examples, proceeding to Match and Generate pipeline.',
+                    len(state.get('example_retrieval_state', {}).get('examples', [])),
+                )
+                return 'match_sql_generator'
+            logger.info('No examples found, proceeding to Think and Generate pipeline.')
+            return 'planner'
+
+        # join_nodes -> match_sql_generator | planner
+        graph.add_conditional_edges(
+            'join_nodes',
+            generate_mode_route,
+            {
+                'match_sql_generator': 'match_sql_generator',
+                'planner': 'planner',
+            },
+        )
+
+        # match_sql_generator -> sql_validator
+        graph.add_edge('match_sql_generator', 'sql_validator')
+
+        def planner_route(
+            state: ChatwithDBState,
+        ) -> Literal['mismatch_sql_generator', 'human_intervent']:
+            if state.get('planner_state', {}).get('requires_clarification', False):
+                return 'human_intervent'
+            return 'mismatch_sql_generator'
+
+        # planner -> mismatch_sql_generator | human_intervent
+        graph.add_conditional_edges(
+            'planner',
+            planner_route,
+            {
+                'mismatch_sql_generator': 'mismatch_sql_generator',
+                'human_intervent': 'human_intervent',
+            },
+        )
+
+        # mismatch_sql_generator -> sql_validator
+        graph.add_edge('mismatch_sql_generator', 'sql_validator')
+
+        def route_sql_validator(
+            state: ChatwithDBState,
+        ) -> Literal['sql_execution_handler', 'human_intervent']:
+            if state.get('sql_validator_state', {}).get('is_valid', False):
+                return 'sql_execution_handler'
+            return 'human_intervent'
+
+        # sql_validator -> sql_execution_handler | human_intervent
+        graph.add_conditional_edges(
+            'sql_validator',
+            route_sql_validator,
+            {
+                'sql_execution_handler': 'sql_execution_handler',
+                'human_intervent': 'human_intervent',
+            },
+        )
+
+        def route_sql_execution(
+            state: ChatwithDBState,
+        ) -> Literal['fixsql_agent', 'answer_generator']:
+            if state.get('sql_execution_state', {}).get('error_message', ''):
+                return 'fixsql_agent'
+            return 'answer_generator'
+
+        # sql_execution_handler -> critic_agent | answer_generator
+        graph.add_conditional_edges(
+            'sql_execution_handler',
+            route_sql_execution,
+            {
+                'fixsql_agent': 'fixsql_agent',
+                'answer_generator': 'answer_generator',
+            },
+        )
+
+        # critic_agent loops back -> sql_validator
+        graph.add_edge('fixsql_agent', 'sql_validator')
+
+        # Terminal nodes
+        graph.add_edge('answer_generator', END)
+        graph.add_edge('human_intervent', END)
+
         return graph.compile()
-    
-    def _merge_data(self, all_data: Dict[str, Any], new_data: Dict[str, Any]) -> None:
-        """
-        Merge new data into all_data, appending arrays instead of overwriting.
-        
+
+    def __init_chatbot_state(self, inputs: AQIAgentInput) -> ChatwithDBState:
+        """Initialize the chatbot state with input data.
+
+        Creates a new ChatwithDBState instance populated with user input and default
+        values for all state variables used throughout the AQI agent pipeline.
+
         Args:
-            all_data: Accumulated data dictionary (modified in place)
-            new_data: New data to merge in
+            inputs: AQIAgentInput containing conversation ID, user ID, and question.
+
+        Returns:
+            ChatwithDBState: Initialized state object with all required fields.
         """
-        for table_name, records in new_data.items():
-            if table_name not in all_data:
-                all_data[table_name] = records
-            else:
-                # If both are lists, append
-                if isinstance(all_data[table_name], list) and isinstance(records, list):
-                    all_data[table_name].extend(records)
-                # If both are dicts, merge recursively
-                elif isinstance(all_data[table_name], dict) and isinstance(records, dict):
-                    all_data[table_name].update(records)
-                # Otherwise, replace
-                else:
-                    all_data[table_name] = records
-    
-    def _get_table_descriptions(self) -> Dict[str, str]:
-        """Get available table descriptions for planning context."""
-        return {
-            'distric_stats': 'PRIMARY TABLE for ALL AQI queries! Contains current & historical AQI values (date, hour, aqi_value, pm25_value, district_id)',
-            'districts': 'District metadata ONLY (id, name, province_id, normalized_name) - DOES NOT contain AQI values!',
-            'air_component': 'Detailed pollutant measurements (PM2.5, PM10, O3, NO2, SO2, CO)',
-            'provinces': 'Province-level administrative data',
-        }
-    
-    def _format_answer_fallback(
+        return ChatwithDBState(
+            question=inputs.question,
+            conversation_id=inputs.conversation_id,
+            interrupt=False,
+            user_id=inputs.user_id,
+            answer='',
+            history_retrieval_state=HistoryRetrievalState(
+                conversation_summary='',
+                conversation_memories=[],
+            ),
+            rephrased_state=RephraseServiceState(
+                rephrased_main_question='',
+                need_context=False,
+                language='',
+            ),
+            table_pruner_state=TablePrunerState(
+                pruned_schema='',
+                retrieved_tables=[],
+                column_selection=[],
+            ),
+            example_retrieval_state=ExampleRetrievalState(
+                examples=[],
+            ),
+            planner_state=PlannerServiceState(
+                subtasks=[],
+                requires_clarification=False,
+                planning_summary='',
+            ),
+            sql_generator_state=SQLGeneratorState(
+                sql_query='',
+            ),
+            human_intervent_state=HumanInterventState(
+                answer='',
+            ),
+            sql_execution_state=SQLExecutionState(
+                execution_result=None,
+                error_message=None,
+                number_of_rows=None,
+            ),
+            fixsql_agent_state=FixSQLAgentState(
+                error_explanation='',
+                fixed_sql='',
+                is_fixed=False,
+            ),
+            answer_generator_state=AnswerGeneratorState(
+                answer='',
+                able_to_answer=False,
+            ),
+            sql_validator_state=SQLValidatorState(
+                is_valid=False,
+                error_message=None,
+                sanitized_query=None,
+            ),
+        )
+
+    async def process(
         self,
-        all_data: Dict[str, Any],
-    ) -> str:
+        inputs: AQIAgentInput,
+        background_tasks: BackgroundTasks,
+    ) -> AQIAgentOutput:
         """
-        Fallback answer formatter when NLG fails.
-        
+        Process the AQI agent application logic.
+
+        Takes the user input, initializes the state, and invokes the compiled
+        state graph. The graph processes the input through the text-to-SQL pipeline,
+        ultimately producing a natural language response about air quality data.
+
         Args:
-            all_data: Merged data from all sub-questions
-            
+            inputs: AQIAgentInput containing the user's question and context.
+            background_tasks: FastAPI BackgroundTasks for scheduling memory updates.
+
         Returns:
-            Simple formatted answer string
+            AQIAgentOutput containing the agent's response.
         """
-        if not all_data:
-            return "Tôi không tìm thấy dữ liệu để trả lời câu hỏi của bạn."
-        
-        answer_parts = []
-        
-        for table_name, records in all_data.items():
-            if not records or not isinstance(records, list):
-                continue
-            
-            answer_parts.append(f"\n**Dữ liệu từ {table_name}:**")
-            answer_parts.append(f"Tìm thấy {len(records)} kết quả:")
-            
-            # Format first few records
-            for record in records[:5]:
-                if 'aqi_value' in record:
-                    # AQI data from distric_stats
-                    district_info = record.get('district', {})
-                    if isinstance(district_info, dict) and 'name' in district_info:
-                        district_name = district_info['name']
-                    else:
-                        district_name = f"ID {record.get('district_id', 'N/A')}"
-                    
-                    answer_parts.append(
-                        f"  - {district_name}: "
-                        f"AQI {record.get('aqi_value')} "
-                        f"({record.get('date', 'N/A')} {record.get('hour', 'N/A')}h)"
-                    )
-                elif 'name' in record and 'id' in record:
-                    # District data
-                    answer_parts.append(f"  - {record['name']} (ID: {record['id']})")
-                elif 'pm25' in record or 'pm10' in record:
-                    # Air component data
-                    components = []
-                    if 'pm25' in record:
-                        components.append(f"PM2.5: {record['pm25']}μg/m³")
-                    if 'pm10' in record:
-                        components.append(f"PM10: {record['pm10']}μg/m³")
-                    answer_parts.append(f"  - {', '.join(components)}")
-                else:
-                    # Generic format
-                    answer_parts.append(f"  - {record}")
-            
-            if len(records) > 5:
-                answer_parts.append(f"  ... và {len(records) - 5} kết quả khác")
-        
-        if not answer_parts:
-            return "Tôi tìm thấy dữ liệu nhưng không thể định dạng được."
-        
-        return '\n'.join(answer_parts)
-    
-    async def process(self, inputs: AQIAgentInput) -> AQIAgentOutput:
-        """
-        Process user question through complete Apollo-style workflow using LangGraph.
-        
-        Args:
-            inputs: Contains user's question
-            
-        Returns:
-            AQIAgentOutput with answer, data, queries
-        """
-        import time
-        
-        start_time = time.time()
-        logger.info(
-            'Starting AQI Agent processing',
-            extra={'question': inputs.question}
+        chatwithdb_state: ChatwithDBState = self.__init_chatbot_state(
+            inputs=inputs,
         )
-        
-        # Get table descriptions for planning context
-        context_schema = self._get_table_descriptions()
-        
-        # Create initial state
-        initial_state: AQIAgentState = {
-            'raw_question': inputs.question,
-            'context_schema': context_schema,
-            'shared_memory': None,
-            '_task_number': 0,
-            '_task_idx': 1,
-            'exception': None,
-            'response_time': 0.0,
-            'final_answer': None,
-            'requires_human_intervention': False,
-            'clarification_question': None,
-        }
-        
-        # Execute graph
-        try:
-            logger.info('Executing graph workflow')
-            graph = self.base_graph
-            final_state: AQIAgentState = await graph.ainvoke(initial_state)
-            
-            logger.info(
-                'Graph execution completed',
-                extra={
-                    'has_exception': final_state.get('exception') is not None,
-                    'has_shared_memory': final_state.get('shared_memory') is not None,
-                }
-            )
-            
-            # Check for exceptions
-            if final_state.get('exception'):
-                error = final_state['exception']
-                logger.error(
-                    'Graph execution failed',
-                    extra={'error': error}
-                )
-                return AQIAgentOutput(
-                    answer=f"Lỗi xử lý: {error.get('error', 'Unknown error')}",
-                    data={},
-                    graphql_queries=[],
-                    error=f"{error.get('where', 'unknown')}: {error.get('error', 'Unknown error')}"
-                )
-            
-            shared_memory = final_state.get('shared_memory')
-            if not shared_memory:
-                logger.warning('No shared_memory in final state')
-                return AQIAgentOutput(
-                    answer="Không thể xử lý câu hỏi của bạn.",
-                    data={},
-                    graphql_queries=[],
-                    error="No shared_memory generated"
-                )
-            
-        except Exception as e:
-            logger.exception(
-                event='Graph execution failed',
-                extra={'question': inputs.question, 'error': str(e)}
-            )
-            return AQIAgentOutput(
-                answer=f"Lỗi hệ thống: {str(e)}",
-                data={},
-                graphql_queries=[],
-                error=f"Graph execution error: {str(e)}"
-            )
-        
-        # Extract results from shared_memory
-        all_data = {}
-        all_queries = []
-        
-        try:
-            # Process first_task results
-            for sq in shared_memory.first_task.sub_questions:
-                if sq.data:
-                    self._merge_data(all_data, sq.data)
-                if sq.query:
-                    all_queries.append(sq.query)
-            
-            # Process second_task results if exists
-            if shared_memory.second_task:
-                for sq in shared_memory.second_task.sub_questions:
-                    if sq.data:
-                        self._merge_data(all_data, sq.data)
-                    if sq.query:
-                        all_queries.append(sq.query)
-            
-            logger.info(
-                'Results extracted from shared_memory',
-                extra={
-                    'num_queries': len(all_queries),
-                    'num_tables': len(all_data),
-                }
-            )
-            
-        except Exception as e:
-            logger.exception(
-                event='Failed to extract results from shared_memory',
-                extra={'error': str(e)}
-            )
-            return AQIAgentOutput(
-                answer="Không thể trích xuất kết quả.",
-                data={},
-                graphql_queries=[],
-                error=f"Result extraction failed: {str(e)}"
-            )
-        
-        # Generate natural language answer using NLG
-        try:
-            logger.info('Starting NLG generation')
-            
-            nlg_result = await self.nlg_service.process(
-                NLGInput(
-                    question=inputs.question,
-                    data=all_data,
-                    queries=all_queries
-                )
-            )
-            
-            final_answer = nlg_result.answer if not nlg_result.error else self._format_answer_fallback(all_data)
-            
-            if nlg_result.error:
-                logger.warning(
-                    'NLG failed, using fallback formatting',
-                    extra={'error': nlg_result.error}
-                )
-            
-        except Exception as e:
-            logger.exception(
-                event='NLG failed',
-                extra={'error': str(e)}
-            )
-            final_answer = self._format_answer_fallback(all_data)
-        
-        response_time = time.time() - start_time
-        
-        logger.info(
-            'AQI Agent processing completed',
-            extra={
-                'question': inputs.question,
-                'response_time': response_time,
-                'num_queries': len(all_queries),
-                'answer_length': len(final_answer),
-            }
+        compiled_graph = self._build_graph()
+        graph_output = await compiled_graph.ainvoke(
+            jsonable_encoder(chatwithdb_state),
         )
-        
-        return AQIAgentOutput(
-            answer=final_answer,
-            data=all_data,
-            graphql_queries=all_queries,
-            error=None
+
+        need_context = graph_output.get('rephrased_state', {}).get('need_context', False)
+        requires_clarification = graph_output.get('planner_state', {}).get('requires_clarification', False)
+        if not need_context or requires_clarification:
+            response = graph_output.get('human_intervent_state', {}).get('answer', '')
+        elif need_context:
+            response = graph_output.get('answer_generator_state', {}).get('answer', '')
+        else:
+            response = graph_output.get('sql_execution_state', {}).get('execution_result', '')
+
+        background_tasks.add_task(
+            self.memory_updater_service.gprocess,
+            inputs=graph_output,
         )
+        return AQIAgentOutput(response=response)

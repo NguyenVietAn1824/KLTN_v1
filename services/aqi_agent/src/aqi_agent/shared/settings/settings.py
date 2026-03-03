@@ -13,7 +13,8 @@ from pydantic_settings import YamlConfigSettingsSource
 
 from .answer_generator import AnswerGeneratorSettings
 from .autocorrector import AutocorrectorSettings
-from .critic_agent import CriticAgentSettings
+from .fixsql_agent import FixSQLAgentSettings
+from .sql_execution import SQLExecutionSettings
 from .example_management import ExampleManagementSettings
 from .history_retrieval import HistoryRetrievalSettings
 from .human_intervent import HumanInterventSettings
@@ -37,7 +38,8 @@ class Settings(BaseSettings):
     human_intervent: HumanInterventSettings
     mismatch_sql_generator: MismatchSQLGeneratorSettings
     answer_generator: AnswerGeneratorSettings
-    critic_agent: CriticAgentSettings
+    fixsql_agent: FixSQLAgentSettings
+    sql_execution: SQLExecutionSettings
     opensearch: OpenSearchSettings
     table_pruner: TablePrunerSettings
     example_management: ExampleManagementSettings

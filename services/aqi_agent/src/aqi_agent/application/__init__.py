@@ -1,16 +1,11 @@
-"""
-Application layer for AQI Agent.
-"""
+from __future__ import annotations
 
-from .service import AQIAgentInput, AQIAgentOutput, AQIAgentService
+from .service import AQIAgentApplication
+from .service import AQIAgentInput
+from .service import AQIAgentOutput
 
 __all__ = [
-    "AQIAgentService",
-    "AQIAgentInput",
-    "AQIAgentOutput",
+    'AQIAgentApplication',
+    'AQIAgentInput',
+    'AQIAgentOutput',
 ]
-
-
-from .service import AQIAgentService, AQIAgentInput, AQIAgentOutput
-
-__all__ = ['AQIAgentService', 'AQIAgentInput', 'AQIAgentOutput']
