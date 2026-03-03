@@ -122,10 +122,27 @@ class SQLExecutionState(TypedDict):
     error_message: str | None
 
 
+class FixSQLAgentState(TypedDict):
+    error_explanation: str
+    fixed_sql: str
+    is_fixed: bool
+
+
+class AnswerGeneratorState(TypedDict):
+    answer: str
+    able_to_answer: bool
+
+
+class SQLValidatorState(TypedDict):
+    is_valid: bool
+    error_message: str | None
+    sanitized_query: str | None
+
+
 class ChatwithDBState(TypedDict):
     """
-    TypedDict representing the state of the ChatwithDB processing.
-    This dictionary holds various attributes related to the chatbot's
+    TypedDict representing the state of the AQI Agent processing.
+    This dictionary holds various attributes related to the agent's
     interaction with the user, including questions, answers, user info,
     conversation details, and memory data.
     """
@@ -134,7 +151,7 @@ class ChatwithDBState(TypedDict):
     conversation_id: str
     user_id: str
     interrupt: bool
-    sql_query: str
+    answer: str
 
     history_retrieval_state: HistoryRetrievalState
     rephrased_state: RephraseServiceState
@@ -144,3 +161,14 @@ class ChatwithDBState(TypedDict):
     sql_generator_state: SQLGeneratorState
     human_intervent_state: HumanInterventState
     sql_execution_state: SQLExecutionState
+    fixsql_agent_state: FixSQLAgentState
+    answer_generator_state: AnswerGeneratorState
+    sql_validator_state: SQLValidatorState
+
+
+class SubAgentState(TypedDict):
+    
+    task_id: str
+    question: str
+    description: str
+    table_name: str

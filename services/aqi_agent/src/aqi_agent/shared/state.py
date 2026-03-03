@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from typing import TypedDict
 
-from .model.planning import TodoList
+from .models.planning import TodoList
 
 
 class AQIAgentState(TypedDict, total=False):
