@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 
 class ConversationTitleGeneratorInput(BaseModel):
-    messages: list[QAMemoryPair]
+    qa_pair: QAMemoryPair
 
 
 class ConversationTitleGeneratorOutput(BaseModel):
@@ -35,7 +35,7 @@ class ConversationTitleGeneratorService(BaseService):
 
     async def process(self, inputs: ConversationTitleGeneratorInput) -> ConversationTitleGeneratorOutput:
         messages_str = qa_message_to_string(
-            messages=inputs.messages,
+            messages=[inputs.qa_pair],
         )
 
         message = [

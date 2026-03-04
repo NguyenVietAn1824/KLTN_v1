@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Optional
 
 from base import BaseModel
@@ -9,61 +10,46 @@ from aqi_agent.shared.models.memory import QAMemoryPair
 from aqi_agent.shared.models.memory import Question
 from logger import get_logger
 from pg import SQLDatabase
-from sqlalchemy import text
+from pg.controller.schemas import Message as MessageSchema
 
 logger = get_logger(__name__)
 
 
 class UploadMessageMemoryInput(BaseModel):
     conversation_id: str
-    user_id: str
     question: str
     answer: str
-    generated_sql: Optional[str] = None
-    sql_result: Optional[str] = None
+    conversation_title: Optional[str] = None
+    additional_info: Optional[dict] = None
 
 
 class UploadMessageMemoryService(BaseService):
-    database: SQLDatabase
+    sql_database: SQLDatabase
 
     async def process(self, inputs: UploadMessageMemoryInput) -> QAMemoryPair:
-        query = text("""
-            INSERT INTO conversation_messages (
-                conversation_id, user_id, question, answer, generated_sql, sql_result
-            )
-            VALUES (:conversation_id, :user_id, :question, :answer, :generated_sql, :sql_result)
-            RETURNING id, created_at
-        """)
-
         try:
-            async with self.database.engine.begin() as conn:
-                result = await conn.execute(
-                    query,
-                    {
-                        'conversation_id': inputs.conversation_id,
-                        'user_id': inputs.user_id,
-                        'question': inputs.question,
-                        'answer': inputs.answer,
-                        'generated_sql': inputs.generated_sql,
-                        'sql_result': inputs.sql_result,
-                    },
-                )
-                row = result.fetchone()
+            message = MessageSchema(
+                id=str(uuid.uuid4()),
+                conversation_id=inputs.conversation_id,
+                question=inputs.question,
+                answer=inputs.answer,
+                additional_info=inputs.additional_info,
+            )
+            with self.sql_database.get_session() as session:
+                self.sql_database.insert_message(session=session, model=message)
 
             logger.info(
                 'Message memory uploaded successfully',
                 extra={
                     'conversation_id': inputs.conversation_id,
-                    'message_id': str(row.id) if row else None,
+                    'message_id': message.id,
                 },
             )
 
             return QAMemoryPair(
-                question=Question(content=inputs.question),
-                answer=Answer(
-                    content=inputs.answer,
-                    generated_sql=inputs.generated_sql,
-                    sql_result=inputs.sql_result,
+                qa_list=(
+                    Question(question=inputs.question),
+                    Answer(answer=inputs.answer),
                 ),
             )
         except Exception as e:
@@ -75,10 +61,8 @@ class UploadMessageMemoryService(BaseService):
                 },
             )
             return QAMemoryPair(
-                question=Question(content=inputs.question),
-                answer=Answer(
-                    content=inputs.answer,
-                    generated_sql=inputs.generated_sql,
-                    sql_result=inputs.sql_result,
+                qa_list=(
+                    Question(question=inputs.question),
+                    Answer(answer=inputs.answer),
                 ),
             )

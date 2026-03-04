@@ -556,18 +556,36 @@ class LiteLLMService(BaseService):
             }
 
         if return_type:
+            schema = return_type.model_json_schema()
+            self.__set_additional_properties_false(schema)
             payload['response_format'] = {
                 'type': 'json_schema',
                 'json_schema': {
                     'name': return_type.__name__,
-                    'schema': {
-                        **return_type.model_json_schema(),
-                        'additionalProperties': False,
-                    },
+                    'schema': schema,
                     'strict': True,
                 },
             }
         return payload
+
+    @staticmethod
+    def __set_additional_properties_false(schema: Dict[str, Any]) -> None:
+        """Recursively fix JSON schema for OpenAI structured output strict mode.
+
+        - Sets additionalProperties=false on all object types
+        - Ensures all properties are listed in 'required'
+        """
+        if schema.get('type') == 'object' or 'properties' in schema:
+            schema['additionalProperties'] = False
+            # Strict mode requires all properties in 'required'
+            if 'properties' in schema:
+                schema['required'] = list(schema['properties'].keys())
+        for defn in schema.get('$defs', {}).values():
+            LiteLLMService.__set_additional_properties_false(defn)
+        for prop in schema.get('properties', {}).values():
+            LiteLLMService.__set_additional_properties_false(prop)
+        if 'items' in schema:
+            LiteLLMService.__set_additional_properties_false(schema['items'])
 
     def __parse_to_openai_message(self, message: CompletionMessage) -> Dict[str, Any]:
         """

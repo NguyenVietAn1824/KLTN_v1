@@ -27,7 +27,7 @@
         {
             "name": "districts",
             "properties": {
-                "description": "Districts table stores all urban districts (quận/huyện) in Hà Nội. Use this to find district names, look up a specific area, or translate between district name and its IDs. Contains id (internal ID, example: ID_00000), name (example: Quận Ba Đình, Huyện Sóc Sơn), normalized_name (ASCII-safe version, example: Quan Ba Dinh), administrative_id (VNM format, example: VNM.27.1_1), province_id referencing provinces."
+                "description": "Districts table stores all ward-level areas (phường) in Hà Nội. Use this to find district/ward names, look up a specific area, or translate between district name and its IDs. IMPORTANT: All names use 'Phường' prefix, e.g. 'Phường Hoàn Kiếm', 'Phường Ba Đình'. When querying by name, always use ILIKE '%keyword%' to handle the prefix. Contains id (internal ID, example: ID_00000), name (example: Phường Ba Đình, Phường Hoàn Kiếm), normalized_name (ASCII-safe version, example: Phuong Ba Dinh), administrative_id (VNM format, example: VNM.27.1_1), province_id referencing provinces."
             },
             "columns": [
                 {
@@ -51,7 +51,7 @@
                     "type": "TEXT",
                     "properties": {
                         "description": "Official Vietnamese name of the district",
-                        "example": ["Quận Ba Đình", "Quận Hoàn Kiếm", "Huyện Sóc Sơn", "Quận Cầu Giấy"]
+                        "example": ["Phường Ba Đình", "Phường Hoàn Kiếm", "Phường Cầu Giấy", "Phường Long Biên"]
                     }
                 },
                 {
@@ -59,7 +59,7 @@
                     "type": "TEXT",
                     "properties": {
                         "description": "ASCII-normalized (diacritic-stripped) version of the district name for search and matching",
-                        "example": ["Quan Ba Dinh", "Quan Hoan Kiem", "Huyen Soc Son"]
+                        "example": ["Phuong Ba Dinh", "Phuong Hoan Kiem", "Phuong Long Bien"]
                     }
                 },
                 {

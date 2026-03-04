@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from base import BaseModel
@@ -112,8 +113,10 @@ class TableIndexerService(BaseService):
             bool: True if the tables were indexed successfully, False otherwise.
         """
         documents: list[AddDocumentInput] = []
-        for model in mdl['models']:
+        for i, model in enumerate(mdl['models']):
             try:
+                if i > 0:
+                    await asyncio.sleep(1)  # Rate limit protection
                 text = model['properties']['description']
                 embedding_output = await self.litellm_service.embedding_async(
                     inputs=LiteLLMEmbeddingInput(

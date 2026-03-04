@@ -48,8 +48,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--model',
         type=str,
-        default=os.getenv('LITELLM__MODEL', 'gpt-4.1-nano'),
-        help='LLM model name used by table pruner (default: gpt-4.1-nano)',
+        default=os.getenv('LITELLM__MODEL', 'gpt-4o-mini'),
+        help='LLM model name used by table pruner (default: gpt-4o-mini)',
     )
     parser.add_argument(
         '--max-completion-tokens',
@@ -77,8 +77,8 @@ async def main(args: argparse.Namespace) -> None:
     llm_setting = LiteLLMSetting(
         url=os.getenv('LITELLM__URL', 'http://localhost:9510'),
         token=os.getenv('LITELLM__TOKEN', ''),
-        model=os.getenv('LITELLM__MODEL', 'gpt-4.1-nano'),
-        embedding_model=os.getenv('LITELLM__EMBEDDING_MODEL', 'azure_embedding'),
+        model=os.getenv('LITELLM__MODEL', 'gpt-4o-mini'),
+        embedding_model=os.getenv('LITELLM__EMBEDDING_MODEL', 'text-embedding-3-small'),
         frequency_penalty=int(os.getenv('LITELLM__FREQUENCY_PENALTY', '0')),
         n=int(os.getenv('LITELLM__N', '1')),
         presence_penalty=int(os.getenv('LITELLM__PRESENCE_PENALTY', '0')),
@@ -93,7 +93,7 @@ async def main(args: argparse.Namespace) -> None:
         max_connections=int(os.getenv('LITELLM__MAX_CONNECTIONS', '200')),
         max_keepalive_connections=int(os.getenv('LITELLM__MAX_KEEPALIVE_CONNECTIONS', '40')),
         context_window=int(os.getenv('LITELLM__CONTEXT_WINDOW', '100000')),
-        condition_model=os.getenv('LITELLM__CONDITION_MODEL', 'gpt-4o'),
+        condition_model=os.getenv('LITELLM__CONDITION_MODEL', 'gpt-4o-mini'),
     )
     litellm_service = LiteLLMService(settings=llm_setting)
 
@@ -102,7 +102,7 @@ async def main(args: argparse.Namespace) -> None:
         host=os.getenv('OPENSEARCH__HOST', 'localhost'),
         port=int(os.getenv('OPENSEARCH__PORT', '19200')),
         knn_size=args.knn_size,
-        embedding_model=os.getenv('LITELLM__EMBEDDING_MODEL', 'azure_embedding'),
+        embedding_model=os.getenv('LITELLM__EMBEDDING_MODEL', 'text-embedding-3-small'),
         encoding_format=os.getenv('LITELLM__ENCODING_FORMAT', 'float'),
         dimensions=args.dimensions,
     )
@@ -118,8 +118,8 @@ async def main(args: argparse.Namespace) -> None:
     )
 
     table_indexer = TableIndexerService(
-        lite_llm=litellm_service,
-        opensearch=opensearch_service,
+        litellm_service=litellm_service,
+        opensearch_service=opensearch_service,
         settings=table_pruner_settings,
     )
 
