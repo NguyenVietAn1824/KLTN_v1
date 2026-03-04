@@ -10,9 +10,9 @@ from aqi_agent.shared.settings import ExampleManagementSettings
 from lite_llm import LiteLLMEmbeddingInput
 from lite_llm import LiteLLMService
 from logger import get_logger
-from open_search import AddDocumentInput
-from open_search import OpenSearchInput
-from open_search import OpenSearchService
+from opensearch import AddDocumentInput
+from opensearch import OpenSearchInput
+from opensearch import OpenSearchService
 
 from .models import ExampleRetrievalInput
 from .models import ExampleRetrievalOutput

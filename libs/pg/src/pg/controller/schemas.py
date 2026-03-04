@@ -36,9 +36,13 @@ class Dated(BaseModel):
 
     Attributes:
         created_at: Timestamp when record was created
+        updated_at: Timestamp when record was last updated
+        deleted_at: Timestamp for soft delete
     """
 
     created_at: datetime | None = None
+    updated_at: datetime | None = None
+    deleted_at: datetime | None = None
 
 
 class DatabaseSchema(Identified, Dated):
@@ -187,3 +191,105 @@ class DistricStats(DatabaseSchema):
 Province.model_rebuild()
 District.model_rebuild()
 DistricStats.model_rebuild()
+
+
+# ---------------------------------------------------------------------------
+# User / Conversation / Message schemas
+# ---------------------------------------------------------------------------
+
+
+class User(DatabaseSchema):
+    """User schema corresponding to user table.
+
+    Attributes:
+        id (str): User identifier
+        full_name (str | None): Full name of the user
+        email (str): Email address
+        dob (datetime | None): Date of birth
+        phone (str | None): Phone number
+        gender (str | None): Gender
+        avt_url (str | None): Avatar URL
+        last_active (datetime): Last active timestamp
+        role (str): User role
+        status (str | None): User status
+    """
+
+    id: str  # type: ignore
+    full_name: str | None = Field(default=None, description='Full name')
+    email: str = Field(description='Email address')
+    dob: datetime | None = Field(default=None, description='Date of birth')
+    phone: str | None = Field(default=None, description='Phone number')
+    gender: str | None = Field(default=None, description='Gender')
+    avt_url: str | None = Field(default=None, description='Avatar URL')
+    last_active: datetime | None = Field(default=None, description='Last active timestamp')
+    role: str = Field(default='user', description='User role')
+    status: str | None = Field(default=None, description='User status')
+
+
+class UserAuthentication(DatabaseSchema):
+    """User authentication schema corresponding to user_authentications table.
+
+    Attributes:
+        id (str): Authentication record identifier
+        user_id (str): Foreign key to user table
+        username (str): Username for login
+        password (str): Hashed password
+        social_id (str | None): Social login identifier
+        mfa_enabled (bool): Whether MFA is enabled
+    """
+
+    id: str  # type: ignore
+    user_id: str = Field(description='Foreign key to user table')
+    username: str = Field(description='Username for login')
+    password: str = Field(description='Hashed password')
+    social_id: str | None = Field(default=None, description='Social login identifier')
+    mfa_enabled: bool = Field(default=False, description='Whether MFA is enabled')
+
+
+class Conversation(DatabaseSchema):
+    """Conversation schema corresponding to conversation table.
+
+    Attributes:
+        id (str): Conversation identifier
+        user_id (str): Foreign key to user table
+        title (str): Title of the conversation
+        summary (str): Summary of the conversation
+        is_confirming (bool): Whether the conversation is in confirming state
+    """
+
+    id: str  # type: ignore
+    user_id: str = Field(description='Foreign key to user table')
+    title: str = Field(default='', description='Conversation title')
+    summary: str = Field(default='', description='Conversation summary')
+    is_confirming: bool = Field(default=False, description='Whether in confirming state')
+
+    # Relationships
+    messages: Optional[list['Message']] = Field(
+        default=None,
+        description='List of messages in this conversation',
+    )
+
+
+class Message(DatabaseSchema):
+    """Message schema corresponding to message table.
+
+    Attributes:
+        id (str): Message identifier
+        conversation_id (str): Foreign key to conversation table
+        question (str): User question text
+        answer (str): Assistant answer text
+        additional_info (dict | None): Additional JSON metadata
+    """
+
+    id: str  # type: ignore
+    conversation_id: str = Field(description='Foreign key to conversation table')
+    question: str = Field(description='User question text')
+    answer: str = Field(default='', description='Assistant answer text')
+    additional_info: dict | None = Field(default=None, description='Additional JSON metadata')
+
+
+# Rebuild all models for forward references
+User.model_rebuild()
+UserAuthentication.model_rebuild()
+Conversation.model_rebuild()
+Message.model_rebuild()

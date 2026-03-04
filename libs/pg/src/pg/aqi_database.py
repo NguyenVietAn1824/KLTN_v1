@@ -18,6 +18,9 @@ from .controller.province_controller import ProvinceController
 from .controller.district_controller import DistrictController
 from .controller.distric_stats_controller import DistricStatsController
 from .controller.air_component_controller import AirComponentController
+from .controller.user_controller import UserController
+from .controller.conversation_controller import ConversationController
+from .controller.message_controller import MessageController
 
 
 class AQIDatabase(
@@ -25,6 +28,9 @@ class AQIDatabase(
     DistrictController,
     DistricStatsController,
     AirComponentController,
+    UserController,
+    ConversationController,
+    MessageController,
 ):
     """Main database class for AQI operations following sun_assistant pattern.
 
