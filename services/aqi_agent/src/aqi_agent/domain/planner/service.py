@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from base import BaseModel
 from base import BaseService
+from aqi_agent.shared.models.memory import QAMemoryPair
 from aqi_agent.shared.models.state import ChatwithDBState
 from aqi_agent.shared.models.state import PlannerServiceState
 from aqi_agent.shared.models.state import SubTask
@@ -224,7 +225,9 @@ class PlannerService(BaseService):
                 inputs=PlannerServiceInput(
                     rephrased_question=rephrased_question,
                     conversation_history=[
-                        CompletionMessage(**mem) for mem in conversation_memories
+                        CompletionMessage(**msg)
+                        for mem in conversation_memories
+                        for msg in QAMemoryPair(**mem).simplize()
                     ],
                     conversation_summary=conversation_summary,
                     schema=pruned_schema,

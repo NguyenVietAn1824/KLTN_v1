@@ -26,6 +26,8 @@ services:
       - POSTGRES_USER=${POSTGRES__USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES__PASSWORD}
       - POSTGRES_DB=${POSTGRES__DB}
+      - TZ=Asia/Ho_Chi_Minh
+      - PGTZ=Asia/Ho_Chi_Minh
     volumes:
       - ./data/pg_history:/var/lib/postgresql/data
     healthcheck:
@@ -131,46 +133,6 @@ services:
     environment:
       - RI_APP_PORT=5540
 
-  chatwithdb_service:
-    build:
-      context: .
-      dockerfile: devops/Dockerfile
-      args:
-        - PACKAGE=chatwithdb
-        - OPTIONAL_BUILD=src/chatwithdb/__init__.py
-    command: ["uv", "run", "--no-sync", "chatwithdb"]
-    ports:
-      - "3333:3333"
-    networks:
-      - app-tier
-    volumes:
-      - type: bind
-        source: ./chatwithdb/
-        target: /home/sunbot/app/services/chatwithdb/
-      - type: bind
-        source: ./libs/
-        target: /home/sunbot/app/libs/
-    environment:
-      - LITELLM__TOKEN=${LITELLM__TOKEN}
-      - LITELLM__URL=http://litellm_service:4000
-      - POSTGRES__USERNAME=${POSTGRES__USERNAME}
-      - POSTGRES__PASSWORD=${POSTGRES__PASSWORD}
-      - POSTGRES__HOST=postgres
-      - POSTGRES__DB=${POSTGRES__DB}
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
-      - OPENSEARCH__HOST=opensearch
-      - OPENSEARCH__PORT=9200
-      - REDIS__HOST=redis
-      - REDIS__PORT=6379
-      - PORT=3333
-      - HOST=0.0.0.0
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: always
-
   aqi_agent_service:
     build:
       context: .
@@ -204,9 +166,27 @@ services:
       - REDIS__PORT=6379
       - PORT=3334
       - HOST=0.0.0.0
+      - TZ=Asia/Ho_Chi_Minh
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - BACKEND_URL=http://aqi_agent_service:3334
+    ports:
+      - "3000:3000"
+    networks:
+      - app-tier
+    environment:
+      - BACKEND_URL=http://aqi_agent_service:3334
+      - NODE_ENV=production
+    depends_on:
+      - aqi_agent_service
     restart: always

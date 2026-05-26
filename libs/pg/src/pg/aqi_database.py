@@ -19,6 +19,7 @@ from .controller.district_controller import DistrictController
 from .controller.distric_stats_controller import DistricStatsController
 from .controller.air_component_controller import AirComponentController
 from .controller.user_controller import UserController
+from .controller.user_authentication_controller import UserAuthenticationController
 from .controller.conversation_controller import ConversationController
 from .controller.message_controller import MessageController
 
@@ -29,6 +30,7 @@ class AQIDatabase(
     DistricStatsController,
     AirComponentController,
     UserController,
+    UserAuthenticationController,
     ConversationController,
     MessageController,
 ):

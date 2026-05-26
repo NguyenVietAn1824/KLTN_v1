@@ -1,13 +1,27 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Sidebar from '@/components/Sidebar';
 import ChatWindow from '@/components/ChatWindow';
-import UserSetupModal from '@/components/UserSetupModal';
+import AuthScreen from '@/components/AuthScreen';
 import type { Conversation, Message } from '@/types';
 
-const API_URL = '/proxy/v1/aqi_agent';
+const AQI_API = '/proxy/v1/aqi_agent';
+const STORAGE_KEY = 'aqi_user_email';
+
+interface ConvSummary {
+  id: string;
+  title: string;
+  created_at: string | null;
+}
+
+interface MessageRow {
+  id: string;
+  question: string;
+  answer: string;
+  created_at: string | null;
+}
 
 export default function Home() {
   const [userId, setUserId] = useState('');
@@ -15,8 +29,75 @@ export default function Home() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [bootstrapping, setBootstrapping] = useState(true);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
+
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    if (saved) setUserId(saved);
+    setBootstrapping(false);
+  }, []);
+
+  const loadConversationMessages = useCallback(
+    async (email: string, convId: string): Promise<Message[]> => {
+      const res = await fetch(
+        `/proxy/v1/conversations/${convId}/messages?email=${encodeURIComponent(email)}`,
+      );
+      if (!res.ok) return [];
+      const data: { info: { messages: MessageRow[] } } = await res.json();
+      const out: Message[] = [];
+      for (const row of data.info.messages || []) {
+        const ts = row.created_at ? new Date(row.created_at) : new Date();
+        out.push({ id: `${row.id}-q`, role: 'user', content: row.question, timestamp: ts });
+        if (row.answer) {
+          out.push({ id: `${row.id}-a`, role: 'assistant', content: row.answer, timestamp: ts });
+        }
+      }
+      return out;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/proxy/v1/conversations?email=${encodeURIComponent(userId)}`);
+        if (!res.ok) return;
+        const data: { info: { conversations: ConvSummary[] } } = await res.json();
+        const summaries = data.info.conversations || [];
+
+        const loaded: Conversation[] = await Promise.all(
+          summaries.map(async (c) => ({
+            id: c.id,
+            title: c.title || 'Untitled',
+            createdAt: c.created_at ? new Date(c.created_at) : new Date(),
+            messages: await loadConversationMessages(userId, c.id),
+          })),
+        );
+        if (!cancelled) setConversations(loaded);
+      } catch {
+        // ignore — user can still start a new chat
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, loadConversationMessages]);
+
+  const handleAuthenticated = useCallback((email: string) => {
+    localStorage.setItem(STORAGE_KEY, email);
+    setUserId(email);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setUserId('');
+    setConversations([]);
+    setActiveConversationId(null);
+  }, []);
 
   const handleNewChat = useCallback(() => {
     setActiveConversationId(null);
@@ -62,7 +143,7 @@ export default function Home() {
       setIsLoading(true);
 
       try {
-        const res = await fetch(API_URL, {
+        const res = await fetch(AQI_API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -122,9 +203,8 @@ export default function Home() {
     [activeConversationId, isLoading, userId],
   );
 
-  if (!userId) {
-    return <UserSetupModal onSetup={setUserId} />;
-  }
+  if (bootstrapping) return null;
+  if (!userId) return <AuthScreen onAuthenticated={handleAuthenticated} />;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -135,6 +215,7 @@ export default function Home() {
         onSelectConversation={setActiveConversationId}
         onNewChat={handleNewChat}
         userId={userId}
+        onLogout={handleLogout}
       />
       <ChatWindow
         conversation={activeConversation}

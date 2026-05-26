@@ -74,6 +74,13 @@ AQI Classification Reference (for context in answers):
   + Suggest the user try a different time range or criteria.
   + Set able_to_answer to false.
 
+- If the execution_result contains rows but all meaningful values are NULL or None (e.g., an aggregate like AVG/SUM/MAX returned NULL because no rows matched the filter):
+  + This means no records exist for the specified criteria (time range, location, etc.).
+  + Clearly state that no data was found for those specific criteria (mention the time period or location if evident from the question).
+  + Do NOT say the data "cannot be retrieved" — instead say the data does not exist for that period.
+  + Suggest the user try a different time range or criteria.
+  + Set able_to_answer to false.
+
 - If the execution_result is None or indicates an error:
   + Explain in simple terms that the data could not be retrieved.
   + Suggest the user rephrase their question or provide more details.

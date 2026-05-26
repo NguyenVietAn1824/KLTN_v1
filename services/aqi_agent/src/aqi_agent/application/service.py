@@ -363,6 +363,14 @@ class AQIAgentApplication(BaseService):
 
         return graph.compile()
 
+    def build_initial_state(self, inputs: AQIAgentInput) -> ChatwithDBState:
+        """Build LangGraph initial state (tests, `script/debug_aqi_pipeline.py`)."""
+        return self.__init_chatbot_state(inputs)
+
+    def compile_pipeline_graph(self):
+        """Return compiled text-to-SQL graph (tests, debug tooling)."""
+        return self._build_graph()
+
     def __init_chatbot_state(self, inputs: AQIAgentInput) -> ChatwithDBState:
         """Initialize the chatbot state with input data.
 
@@ -451,10 +459,10 @@ class AQIAgentApplication(BaseService):
         Returns:
             AQIAgentOutput containing the agent's response.
         """
-        chatwithdb_state: ChatwithDBState = self.__init_chatbot_state(
+        chatwithdb_state: ChatwithDBState = self.build_initial_state(
             inputs=inputs,
         )
-        compiled_graph = self._build_graph()
+        compiled_graph = self.compile_pipeline_graph()
         graph_output = await compiled_graph.ainvoke(
             jsonable_encoder(chatwithdb_state),
         )

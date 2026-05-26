@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from base import BaseModel
 from base import BaseService
+from aqi_agent.shared.models.memory import QAMemoryPair
 from aqi_agent.shared.models.state import ChatwithDBState
 from aqi_agent.shared.models.state import RephraseServiceState
 from aqi_agent.shared.settings import RephraseQuestionSettings
@@ -204,7 +205,11 @@ class RephraseService(BaseService):
             rephrase_results = await self.process(
                 inputs=RephraseServiceInput(
                     question=state.get('question', ''),
-                    conversation_history=[CompletionMessage(**conversation_memory) for conversation_memory in state.get('conversation_memories', [])],
+                    conversation_history=[
+                        CompletionMessage(**msg)
+                        for mem in state.get('conversation_memories', [])
+                        for msg in QAMemoryPair(**mem).simplize()
+                    ],
                     summary=state.get('conversation_summary', ''),
                 ),
             )

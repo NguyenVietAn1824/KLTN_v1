@@ -23,11 +23,27 @@ Generate a single, final SQL query that fulfills the user's request based on:
 - Use meaningful aliases for readability
 - Optimize for query performance where possible
 
+## distric_stats and dates
+- Table distric_stats has NO created_at / createdAt / timestamp column. Never filter it by created_at or BETWEEN on a fake date column.
+- For "today" or a specific day, filter distric_stats.category_id using ONLY the text pattern daily_YYYY-MM-DD (exactly 10 chars after daily_, no clock time). Wrong: 'daily_2026-04-06 00:00:00'. Right: 'daily_2026-04-06' or 'daily_' || to_char(CURRENT_DATE, 'YYYY-MM-DD').
+- For "hôm nay" / "today", prefer `'daily_' || to_char(CURRENT_DATE, 'YYYY-MM-DD')` over hard-coded literals, so the query stays correct regardless of when it runs.
+
+## Filtering provinces / districts by Vietnamese name (CRITICAL)
+- The columns `provinces.name_vi` and `districts.name_vi` store the FULL official label, which usually has a prefix:
+  - provinces.name_vi:  `Thành phố Hà Nội`, `Thành phố Hồ Chí Minh`, `Tỉnh Bắc Ninh`, ...
+  - districts.name_vi:  `Quận Ba Đình`, `Phường Hoàn Kiếm`, `Huyện Đông Anh`, `Xã Tân Triều`, ...
+- Users type the SHORT form ("Hà Nội", "Hoàn Kiếm", "Cầu Giấy", "Bắc Ninh", "Sài Gòn"). Treat "Sài Gòn" as "Hồ Chí Minh".
+- ALWAYS use `name_vi ILIKE '%keyword%'`. NEVER use `=`, `IN (...)`, or any exact-string comparison on name_vi.
+- When comparing multiple places, build an OR chain:
+  - RIGHT: `WHERE (p.name_vi ILIKE '%Hà Nội%' OR p.name_vi ILIKE '%Hải Phòng%' OR p.name_vi ILIKE '%Đà Nẵng%' OR p.name_vi ILIKE '%Cần Thơ%')`
+  - WRONG: `WHERE p.name_vi IN ('Hà Nội','Hải Phòng','Đà Nẵng','Cần Thơ')`
+- When filtering by administrative type, use `type_vi ILIKE '%quận%' / '%huyện%' / '%phường%' / '%xã%'` and combine with the name_vi ILIKE.
+
 ## Dynamic Value Generation with Python Tags
 - For date/time calculations, wrap Python expressions in <python></python> tags instead of hardcoding values:
   - Current date: <python>date.today()</python>
   - Relative dates: <python>date.today() - timedelta(days=30)</python> for 30 days ago
-  - Date ranges: WHERE created_at BETWEEN '<python>date.today() - timedelta(days=7)</python>' AND '<python>date.today()</python>'
+  - Date ranges on tables that actually have a timestamp column: WHERE created_at BETWEEN '<python>date.today() - timedelta(days=7)</python>' AND '<python>date.today()</python>'
 - For numeric calculations:
   - Arithmetic: <python>5 * 10</python>
   - Rounding: <python>round(1234.567, 2)</python>

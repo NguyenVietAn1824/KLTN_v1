@@ -9,6 +9,7 @@ interface Props {
   onSelectConversation: (id: string) => void;
   onNewChat: () => void;
   userId: string;
+  onLogout?: () => void;
 }
 
 export default function Sidebar({
@@ -18,6 +19,7 @@ export default function Sidebar({
   onSelectConversation,
   onNewChat,
   userId,
+  onLogout,
 }: Props) {
   if (!open) return null;
 
@@ -67,11 +69,21 @@ export default function Sidebar({
 
       {/* Footer - user */}
       <div className="border-t border-[#2a2a2a] px-3 py-3">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5">
           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
             {userId.charAt(0).toUpperCase()}
           </div>
-          <span className="truncate text-sm text-[#c5c5c5]">{userId}</span>
+          <span className="flex-1 truncate text-sm text-[#c5c5c5]">{userId}</span>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Sign out"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8ea0] transition hover:bg-[#2a2a2a] hover:text-[#ececec]"
+            >
+              <LogoutIcon />
+            </button>
+          )}
         </div>
       </div>
     </aside>
@@ -97,6 +109,16 @@ function PencilIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }

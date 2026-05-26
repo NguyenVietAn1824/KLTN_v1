@@ -5,6 +5,7 @@ from .aqi_database import AQIDatabase as SQLDatabase
 from .controller.district_controller import DistrictController
 from .controller.distric_stats_controller import DistricStatsController
 from .controller.user_controller import UserController
+from .controller.user_authentication_controller import UserAuthenticationController
 from .controller.conversation_controller import ConversationController
 from .controller.message_controller import MessageController
 from .model import AirComponent
@@ -37,6 +38,7 @@ __all__ = [
     'DistrictController',
     'DistricStatsController',
     'UserController',
+    'UserAuthenticationController',
     'ConversationController',
     'MessageController',
     'models',

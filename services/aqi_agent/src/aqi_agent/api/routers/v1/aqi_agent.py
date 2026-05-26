@@ -66,15 +66,17 @@ async def aqi_agent(
             )
         else:
             with resources.sql_database.get_session() as session:
-                user = resources.sql_database.get_user_by_id(
+                users = resources.sql_database.get_users(
                     session,
-                    inputs.user_id,
+                    filter={'email': inputs.user_id},
                 )
+                user = users[0] if users else None
             if not user:
                 return exception_handler.handle_unauthorized_error(
-                    message='Invalid user_id',
+                    message='Invalid email',
                     extra={'question': inputs.question},
                 )
+            inputs = inputs.model_copy(update={'user_id': user.id})
     except Exception as e:
         return exception_handler.handle_exception(
             e=f'Error during user_id validation: {e!s}',
