@@ -148,7 +148,6 @@ class ColumnPrunerService(BaseService):
             if column_definitions:
                 ddl = f'CREATE TABLE {table_name} (\n'
                 ddl += ',\n'.join(column_definitions)
-                ddl += ',\n    createdAt DATETIME'
                 ddl += '\n);'
                 ddl_statements.append(ddl)
 

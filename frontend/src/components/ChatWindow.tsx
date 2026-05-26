@@ -32,18 +32,18 @@ export default function ChatWindow({
   const messages = conversation?.messages ?? [];
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden bg-white">
       {/* Top bar */}
-      <header className="flex h-12 flex-shrink-0 items-center gap-2 border-b border-[#2a2a2a] px-4">
+      <header className="flex h-12 flex-shrink-0 items-center gap-2 border-b border-gray-200 px-4">
         <button
           onClick={onToggleSidebar}
-          title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#6b6b6b] transition hover:bg-[#2f2f2f] hover:text-[#ececec]"
+          title={sidebarOpen ? 'Ẩn thanh bên' : 'Hiện thanh bên'}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
         >
           <MenuIcon />
         </button>
-        <span className="truncate text-sm text-[#8e8ea0]">
-          {conversation?.title ?? 'New chat'}
+        <span className="truncate text-sm text-gray-600">
+          {conversation?.title ?? 'Cuộc trò chuyện mới'}
         </span>
       </header>
 

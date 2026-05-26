@@ -13,7 +13,7 @@ export default function MessageItem({ message }: Props) {
     return (
       <div className="flex justify-end px-4 md:px-6">
         <div className="max-w-[75%]">
-          <div className="rounded-2xl rounded-tr-sm bg-[#2f2f2f] px-4 py-3 text-sm leading-relaxed text-[#ececec]">
+          <div className="rounded-2xl rounded-tr-sm bg-emerald-600 px-4 py-3 text-sm leading-relaxed text-white">
             {message.content}
           </div>
         </div>
@@ -31,7 +31,7 @@ export default function MessageItem({ message }: Props) {
           <LoadingDots />
         ) : (
           <div
-            className={`text-sm ${message.isError ? 'text-red-300' : 'text-[#e0e0e0]'}`}
+            className={`text-sm ${message.isError ? 'text-red-600' : 'text-gray-800'}`}
           >
             <div className="markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -41,7 +41,7 @@ export default function MessageItem({ message }: Props) {
           </div>
         )}
         {!message.isLoading && (
-          <div className="mt-1.5 text-xs text-[#5a5a5a]">
+          <div className="mt-1.5 text-xs text-gray-400">
             {message.timestamp.toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -72,9 +72,9 @@ function AgentAvatar() {
 function LoadingDots() {
   return (
     <div className="flex items-center gap-1.5 py-1.5">
-      <span className="dot-1 h-2 w-2 rounded-full bg-[#6b6b6b]" />
-      <span className="dot-2 h-2 w-2 rounded-full bg-[#6b6b6b]" />
-      <span className="dot-3 h-2 w-2 rounded-full bg-[#6b6b6b]" />
+      <span className="dot-1 h-2 w-2 rounded-full bg-gray-400" />
+      <span className="dot-2 h-2 w-2 rounded-full bg-gray-400" />
+      <span className="dot-3 h-2 w-2 rounded-full bg-gray-400" />
     </div>
   );
 }

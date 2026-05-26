@@ -186,7 +186,7 @@ export default function Home() {
                     m.isLoading
                       ? {
                           ...m,
-                          content: `**Could not reach the AQI Agent service.**\n\n${msg}\n\nMake sure the service is running on port 3334.`,
+                          content: `**Không thể kết nối tới máy chủ.**\n\n${msg}\n\nVui lòng kiểm tra dịch vụ đang chạy ở cổng 3334.`,
                           isLoading: false,
                           isError: true,
                         }

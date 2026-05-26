@@ -40,16 +40,16 @@ export default function InputBar({ onSend, isLoading }: Props) {
   return (
     <div className="flex-shrink-0 px-4 pb-5 pt-2">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-end gap-3 rounded-2xl border border-[#3f3f3f] bg-[#2f2f2f] px-4 py-3 shadow-lg transition focus-within:border-[#5a5a5a]">
+        <div className="flex items-end gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-3 shadow-sm transition focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500">
           <textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about air quality in Hanoi…"
+            placeholder="Hỏi về chất lượng không khí ở Hà Nội…"
             rows={1}
             disabled={isLoading}
-            className="flex-1 resize-none bg-transparent text-sm leading-relaxed text-[#ececec] placeholder:text-[#5a5a5a] focus:outline-none disabled:opacity-50"
+            className="flex-1 resize-none bg-transparent text-sm leading-relaxed text-gray-900 placeholder:text-gray-400 focus:outline-none disabled:opacity-50"
             style={{ maxHeight: '200px' }}
           />
           <button
@@ -58,14 +58,14 @@ export default function InputBar({ onSend, isLoading }: Props) {
             className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition ${
               canSend
                 ? 'bg-emerald-600 hover:bg-emerald-500 active:scale-95'
-                : 'cursor-not-allowed bg-[#3f3f3f]'
+                : 'cursor-not-allowed bg-gray-200'
             }`}
           >
             <SendIcon active={canSend} />
           </button>
         </div>
-        <p className="mt-2 text-center text-xs text-[#4a4a4a]">
-          AQI Agent can make mistakes. Verify important air quality data.
+        <p className="mt-2 text-center text-xs text-gray-400">
+          Hệ thống có thể mắc lỗi. Vui lòng kiểm chứng các dữ liệu quan trọng.
         </p>
       </div>
     </div>
@@ -77,7 +77,7 @@ function SendIcon({ active }: { active: boolean }) {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
       <path
         d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
-        stroke={active ? 'white' : '#5a5a5a'}
+        stroke={active ? 'white' : '#9ca3af'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

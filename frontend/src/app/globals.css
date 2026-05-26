@@ -10,14 +10,17 @@ body {
 
 /* Thin scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 2px;
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
 }
 
 /* ─── Markdown rendering ─────────────────────────────── */
@@ -26,7 +29,7 @@ body {
 .markdown h3 {
   font-weight: 600;
   margin: 0.8rem 0 0.4rem;
-  color: #ececec;
+  color: #111827;
 }
 .markdown h1 {
   font-size: 1.2rem;
@@ -60,8 +63,8 @@ body {
 }
 
 .markdown code {
-  background: #1a1a1a;
-  color: #e8c77c;
+  background: #f3f4f6;
+  color: #b45309;
   padding: 0.15em 0.45em;
   border-radius: 4px;
   font-size: 0.84em;
@@ -69,8 +72,8 @@ body {
 }
 
 .markdown pre {
-  background: #1a1a1a;
-  border: 1px solid #3f3f3f;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
@@ -78,7 +81,7 @@ body {
 }
 .markdown pre code {
   background: none;
-  color: #e2e2e2;
+  color: #1f2937;
   padding: 0;
   font-size: 0.85em;
 }
@@ -90,49 +93,49 @@ body {
   font-size: 0.86em;
 }
 .markdown th {
-  background: #2a2a2a;
+  background: #f3f4f6;
   padding: 0.45rem 0.75rem;
   text-align: left;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #d1d5db;
   font-weight: 600;
-  color: #c5c5c5;
+  color: #374151;
 }
 .markdown td {
   padding: 0.45rem 0.75rem;
-  border: 1px solid #3a3a3a;
-  color: #d0d0d0;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
 }
 .markdown tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.02);
+  background: #fafafa;
 }
 
 .markdown strong {
   font-weight: 600;
-  color: #ececec;
+  color: #111827;
 }
 .markdown em {
   font-style: italic;
-  color: #c5c5c5;
+  color: #4b5563;
 }
 
 .markdown blockquote {
-  border-left: 3px solid #4a4a4a;
+  border-left: 3px solid #d1d5db;
   padding-left: 1rem;
-  color: #8e8ea0;
+  color: #6b7280;
   margin: 0.5rem 0;
 }
 
 .markdown a {
-  color: #6ee7b7;
+  color: #059669;
   text-decoration: underline;
 }
 .markdown a:hover {
-  color: #a7f3d0;
+  color: #047857;
 }
 
 .markdown hr {
   border: none;
-  border-top: 1px solid #3f3f3f;
+  border-top: 1px solid #e5e7eb;
   margin: 1rem 0;
 }
 
